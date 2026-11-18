@@ -10,7 +10,7 @@ import { listarControle } from '../services/controle-api.js'
 const CLASSE_ESTADO = { novo: 'selo-ok', bom: 'selo-ok', regular: 'selo-atencao', ruim: 'selo-ruim', quebrado: 'selo-ruim' }
 
 /** Aba "Controle de Chips": quem está com cada chip e celular, por centro de custo. */
-export default function ListaControle({ usuario }) {
+export default function ListaControle({ usuario, versao = 0, onMudou }) {
   const [dados, setDados] = useState({ linhas: [], centrosCusto: [] })
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState('')
@@ -30,9 +30,11 @@ export default function ListaControle({ usuario }) {
     setCarregando(false)
   }, [])
 
+  // versao muda quando outra aba mexe nos dados (ex.: pedido respondido): a lista recarrega
   useEffect(() => {
     carregar()
-  }, [carregar])
+  }, [carregar, versao])
+  const mudou = () => (onMudou ? onMudou() : carregar())
 
   const doCc = useMemo(() => dados.linhas.filter((l) => !filtro.cc || l.centro_custo === filtro.cc), [dados.linhas, filtro.cc])
   const contagem = useMemo(() => {
@@ -157,6 +159,15 @@ export default function ListaControle({ usuario }) {
                 {l.aparelho.fotos > 0 ? ` · ${l.aparelho.fotos} foto(s)` : ' · sem foto'}
               </div>
             )}
+            {l.pedidos && l.pedidos.length > 0 && (
+              <div className="item-pedidos">
+                {l.pedidos.map((p) => (
+                  <span key={p.id} className="selo selo-pedido-aberto">
+                    Pedido à TI: {p.tipoRotulo.split(' (')[0]}
+                  </span>
+                ))}
+              </div>
+            )}
             {l.atualizado_em && <div className="item-rodape">Atualizado em {formatarData(l.atualizado_em)}</div>}
           </button>
         ))}
@@ -169,7 +180,7 @@ export default function ListaControle({ usuario }) {
           centrosCusto={dados.centrosCusto}
           celularesSemChip={celularesSemChip}
           onFechar={() => setAberto(null)}
-          onMudou={carregar}
+          onMudou={mudou}
         />
       )}
       {novo && (

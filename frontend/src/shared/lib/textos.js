@@ -27,6 +27,22 @@ export const SITUACOES_CHIP = [
   ['cancelado', 'Cancelado'],
 ]
 
+/** Pedidos para a TI: [tipo, rótulo, explicação]. */
+export const TIPOS_PEDIDO = [
+  ['devolver', 'Devolver para a TI', 'O setor não precisa mais ou ninguém está usando.'],
+  ['reposicao', 'Reposição do chip', 'Chip com defeito, quebrado ou perdido: precisa de um chip novo no mesmo número.'],
+  ['perda', 'Perda ou roubo', 'O chip ou o celular sumiu. A TI bloqueia a linha e o aparelho.'],
+  ['troca_aparelho', 'Celular com defeito', 'Precisa trocar ou consertar o celular.'],
+  ['outro', 'Outro pedido', 'Qualquer outra coisa que a TI precise resolver.'],
+]
+
+export const STATUS_PEDIDO = [
+  ['aberto', 'Aberto'],
+  ['em_andamento', 'Em andamento'],
+  ['concluido', 'Concluído'],
+  ['recusado', 'Recusado'],
+]
+
 /** Rótulo de um valor numa lista [valor, rótulo]. */
 export const rotulo = (lista, valor) => (lista.find(([v]) => v === valor) || [valor, valor || '—'])[1]
 

@@ -180,3 +180,25 @@ a.botao { display: inline-block; text-decoration: none; }
   .quem { text-align: left; }
   .historico-data { margin-left: 0; width: 100%; }
 }
+
+/* ---------- Pedidos para a TI ---------- */
+.secao-pedidos { border-color: #fed7aa; background: #fffaf5; }
+.item-pedidos { display: flex; flex-wrap: wrap; gap: .3rem; }
+.selo-pedido-aberto { background: #ffedd5; color: #9a3412; }
+.selo-pedido-em_andamento { background: #dbeafe; color: #1e40af; }
+.selo-pedido-concluido { background: #d1fae5; color: #065f46; }
+.selo-pedido-recusado { background: #fee2e2; color: #991b1b; }
+.lista-pedidos { list-style: none; display: flex; flex-direction: column; gap: .6rem; margin-bottom: .75rem; }
+.pedido { padding: .6rem .8rem; border: 1px solid var(--cor-borda); border-left: 4px solid #f97316; border-radius: 6px; background: #fff; display: flex; flex-direction: column; gap: .3rem; }
+.pedido-em_andamento { border-left-color: #3b82f6; }
+.pedido-concluido { border-left-color: #10b981; opacity: .85; }
+.pedido-recusado { border-left-color: #ef4444; opacity: .85; }
+.pedido-topo { display: flex; justify-content: space-between; align-items: flex-start; gap: .5rem; }
+.pedido-linha { font-size: .88rem; color: #374151; }
+.pedido-resposta { font-size: .88rem; color: #065f46; background: #ecfdf5; padding: .35rem .5rem; border-radius: 4px; }
+.opcoes-pedido { display: flex; flex-direction: column; gap: .4rem; }
+.opcao-pedido { display: flex; gap: .6rem; align-items: flex-start; padding: .55rem .7rem; border: 1px solid var(--cor-borda); border-radius: 6px; cursor: pointer; background: #fff; }
+.opcao-pedido span { display: flex; flex-direction: column; gap: .1rem; }
+.opcao-pedido small { color: var(--cor-suave); }
+.opcao-marcada { border-color: #f97316; background: #fff7ed; }
+.opcao-bloqueada { opacity: .55; cursor: not-allowed; }

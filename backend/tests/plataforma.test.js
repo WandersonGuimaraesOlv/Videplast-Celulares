@@ -251,3 +251,45 @@ describe('gestor (TI)', () => {
     assert.equal(repo.banco.arquivos.size, 0);
   });
 });
+
+describe('pedidos para a TI', () => {
+  // A esta altura o supervisor do Transporte cuida do chip 64984330405 (sem celular)
+  test('supervisor pede para devolver o chip; não repete; regras de cada tipo', async () => {
+    const r = await chamar(SUP_TRANSPORTE, 'POST', '/pedidos', { tipo: 'devolver', chip: '(64) 98433-0405', descricao: 'Motorista saiu, ninguém usa' });
+    assert.equal(r.status, 200, JSON.stringify(r.corpo));
+    assert.equal(r.corpo.pedido.status, 'aberto');
+    assert.equal(r.corpo.pedido.centro_custo, '1005COML04');
+    assert.match(r.corpo.pedido.tipoRotulo, /Devolver/);
+    assert.equal((await chamar(SUP_TRANSPORTE, 'POST', '/pedidos', { tipo: 'devolver', chip: '64984330405' })).status, 409);
+    assert.equal((await chamar(SUP_TRANSPORTE, 'POST', '/pedidos', { tipo: 'troca_aparelho', chip: '64984330405' })).status, 400);
+    assert.equal((await chamar(SUP_TRANSPORTE, 'POST', '/pedidos', { tipo: 'outro', chip: '64984330405' })).status, 400);
+    assert.equal((await chamar(SUP_TRANSPORTE, 'POST', '/pedidos', { tipo: 'perda', chip: '64999990002' })).status, 403);
+    assert.equal((await chamar(SUP_TRANSPORTE, 'POST', '/pedidos', { tipo: 'xyz', chip: '64984330405' })).status, 400);
+  });
+
+  test('o pedido aberto aparece na lista, na ficha e no histórico', async () => {
+    const linha = (await chamar(SUP_TRANSPORTE, 'GET', '/controle')).corpo.linhas.find((l) => l.numero === '64984330405');
+    assert.deepEqual(linha.pedidos.map((p) => p.tipo), ['devolver']);
+    const ficha = (await chamar(SUP_TRANSPORTE, 'GET', '/ficha?chip=64984330405')).corpo;
+    assert.equal(ficha.pedidos.length, 1);
+    assert.equal(ficha.historico[0].acao, 'pediu à TI');
+    assert.equal((await chamar(SUP_TRANSPORTE, 'GET', '/pedidos')).corpo.pedidos.length, 1);
+    assert.deepEqual((await chamar(SEM_PAPEL, 'GET', '/pedidos')).corpo.pedidos, []);
+  });
+
+  test('só a TI responde; recusar pede motivo; concluir fecha o pedido', async () => {
+    const id = repo.banco.pedidos[0].id;
+    assert.equal((await chamar(SUP_TRANSPORTE, 'PUT', `/pedidos/${id}`, { status: 'concluido' })).status, 403);
+    assert.equal((await chamar(GESTOR, 'PUT', `/pedidos/${id}`, { status: 'recusado' })).status, 400);
+    const r = await chamar(GESTOR, 'PUT', `/pedidos/${id}`, { status: 'concluido', resposta: 'Chip recolhido para a TI' });
+    assert.equal(r.status, 200, JSON.stringify(r.corpo));
+    assert.equal(r.corpo.pedido.status, 'concluido');
+    assert.equal(r.corpo.pedido.resolvido_por, 'Gestor Teste (900001)');
+    const linha = (await chamar(SUP_TRANSPORTE, 'GET', '/controle')).corpo.linhas.find((l) => l.numero === '64984330405');
+    assert.deepEqual(linha.pedidos, []);
+    assert.equal((await chamar(GESTOR, 'GET', '/pedidos?abertos=sim')).corpo.pedidos.length, 0);
+    const ficha = (await chamar(GESTOR, 'GET', '/ficha?chip=64984330405')).corpo;
+    assert.equal(ficha.historico[0].acao, 'pedido concluído');
+    assert.equal((await chamar(SUP_TRANSPORTE, 'POST', '/pedidos', { tipo: 'devolver', chip: '64984330405' })).status, 200);
+  });
+});

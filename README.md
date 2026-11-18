@@ -24,6 +24,14 @@ crachá no cabeçalho `X-Usuario`. O sistema precisa estar cadastrado no Portal 
 - **Só chip**: chip sem celular cadastrado (ex.: chip no celular particular, modem, rastreador).
 - **Só celular**: celular sem chip (reserva, Wi-Fi, manutenção) num CC ou no estoque da TI (sem CC).
 
+## Pedidos para a TI
+
+Na ficha de cada chip ou celular, o supervisor clica em **Fazer pedido para a TI**: devolver (o setor não precisa mais
+ou ninguém usa), reposição do chip, perda ou roubo, celular com defeito ou outro pedido. O pedido aparece na lista
+("Pedido à TI") e na aba **Pedidos para a TI**, onde a TI marca em andamento, concluído ou recusado, com a resposta.
+O pedido não muda o cadastro sozinho: a TI resolve na ficha (e na TIM). Tudo fica no histórico do item.
+Tabela `cel_pedidos`, criada por [supabase/002_pedidos.sql](supabase/002_pedidos.sql).
+
 ## Rateio TIM
 
 Aba **Rateio TIM**: envie a fatura em PDF. Cada linha vai para o centro de custo do chip cadastrado aqui (em RV, `1007...`

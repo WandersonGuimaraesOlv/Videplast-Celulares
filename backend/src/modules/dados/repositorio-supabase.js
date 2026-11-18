@@ -119,6 +119,31 @@ function criarRepositorioSupabase(supabase, { bucket }) {
       if (error) console.error('[Fotos] Não consegui apagar do Storage:', error.message);
     },
 
+    // ---------- Pedidos para a TI ----------
+    async listarPedidos({ ccs = null, somenteAbertos = false } = {}) {
+      let q = supabase.from('cel_pedidos').select('*').order('criado_em', { ascending: false }).limit(500);
+      if (ccs) q = q.in('centro_custo', ccs.length ? ccs : ['-']);
+      if (somenteAbertos) q = q.in('status', ['aberto', 'em_andamento']);
+      return resultado(await q, 'listar os pedidos');
+    },
+    async pedidosDoItem({ numero = '', aparelhoId = null }) {
+      const filtros = [numero && `numero_chip.eq.${numero}`, aparelhoId && `aparelho_id.eq.${aparelhoId}`].filter(Boolean);
+      if (!filtros.length) return [];
+      return resultado(
+        await supabase.from('cel_pedidos').select('*').or(filtros.join(',')).order('criado_em', { ascending: false }).limit(100),
+        'ler os pedidos do item'
+      );
+    },
+    async buscarPedido(id) {
+      return resultado(await supabase.from('cel_pedidos').select('*').eq('id', id).maybeSingle(), 'buscar o pedido');
+    },
+    async inserirPedido(dados) {
+      return resultado(await supabase.from('cel_pedidos').insert(dados).select('*').single(), 'gravar o pedido');
+    },
+    async atualizarPedido(id, campos) {
+      return resultado(await supabase.from('cel_pedidos').update(campos).eq('id', id).select('*').single(), 'atualizar o pedido');
+    },
+
     // ---------- Supervisores e gestores ----------
     async listarSupervisores() {
       return resultado(await supabase.from('cel_supervisores').select('*').order('nome').order('centro_custo'), 'listar os supervisores');

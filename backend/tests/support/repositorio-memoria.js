@@ -11,9 +11,11 @@ function criarRepositorioMemoria({ crachas = [], centrosCusto = [], gestores = [
     supervisores: supervisores.map((s) => ({ nome: '', ...s })),
     gestores: gestores.map((g) => ({ nome: '', ...g })),
     arquivos: new Map(),
+    pedidos: [],
   };
   let proximoAparelho = 1;
   let proximaFoto = 1;
+  let proximoPedido = 1;
   const copia = (x) => (x ? JSON.parse(JSON.stringify(x)) : null);
   const filtrarCc = (lista, ccs) => (ccs ? lista.filter((i) => ccs.includes(i.centro_custo)) : lista);
 
@@ -103,6 +105,29 @@ function criarRepositorioMemoria({ crachas = [], centrosCusto = [], gestores = [
     },
     async apagarArquivos(caminhos) {
       for (const c of caminhos) banco.arquivos.delete(c);
+    },
+    async listarPedidos({ ccs = null, somenteAbertos = false } = {}) {
+      return filtrarCc(banco.pedidos, ccs)
+        .filter((p) => !somenteAbertos || ['aberto', 'em_andamento'].includes(p.status))
+        .slice()
+        .reverse()
+        .map(copia);
+    },
+    async pedidosDoItem({ numero = '', aparelhoId = null }) {
+      return banco.pedidos.filter((p) => (numero && p.numero_chip === numero) || (aparelhoId && p.aparelho_id === aparelhoId)).slice().reverse().map(copia);
+    },
+    async buscarPedido(id) {
+      return copia(banco.pedidos.find((p) => p.id === id));
+    },
+    async inserirPedido(dados) {
+      const pedido = { id: proximoPedido++, resposta: '', resolvido_por: '', resolvido_em: null, ...dados };
+      banco.pedidos.push(pedido);
+      return copia(pedido);
+    },
+    async atualizarPedido(id, campos) {
+      const pedido = banco.pedidos.find((p) => p.id === id);
+      Object.assign(pedido, campos);
+      return copia(pedido);
     },
     async listarSupervisores() {
       return banco.supervisores.map(copia);

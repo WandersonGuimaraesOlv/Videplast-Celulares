@@ -12,6 +12,7 @@
 - Celular ligado a chip: quem usa, setor e CC vêm do chip (`controle-service.js` sincroniza).
 - CC sempre conferido no cadastro `centro_de_custo` da filial (`FILIAL`, 1005); `1007...` vira `1005...`.
 - O rateio usa `calcularRateio` do módulo telefonia sem mudar a regra: CC da linha = CC do chip; valor fora das linhas proporcional ou inteiro no CC informado.
+- Pedidos para a TI (17/11/2026): supervisor pede devolver, reposição do chip, perda/roubo, troca de celular ou outro, nos itens dos CCs dele. Não repete pedido aberto do mesmo tipo no mesmo item. O pedido não muda o cadastro; só a TI responde (em andamento, concluído, recusado com motivo). `modules/pedidos`; a lista e a ficha seguem funcionando se a tabela `cel_pedidos` falhar.
 
 ## Estrutura
 
