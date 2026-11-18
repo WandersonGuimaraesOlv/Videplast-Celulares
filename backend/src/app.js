@@ -7,6 +7,7 @@ const { criarFonteDeCadastro } = require('./modules/centros-custo');
 const { criarControle } = require('./modules/controle/services/controle-service');
 const { criarEquipe } = require('./modules/equipe/services/equipe-service');
 const { criarPlanilhas } = require('./modules/planilhas/services/planilhas-service');
+const { criarPedidos } = require('./modules/pedidos/services/pedidos-service');
 const { opcoesTelefoniaSchema } = require('./modules/telefonia/schemas');
 const { getZodErrorMessage } = require('./modules/shared');
 const { erro } = require('./modules/shared/erros');
@@ -25,6 +26,7 @@ function criarApp({ repo, filial = 1005, usuarioDev = '', limiteUploadMb = 20, a
   const controle = criarControle({ repo, obterCadastro, filial, agora });
   const equipe = criarEquipe({ repo, obterCadastro, aoMudar: identificacao.esquecer, agora });
   const planilhas = criarPlanilhas({ repo, obterCadastro, filial, agora });
+  const pedidos = criarPedidos({ repo, agora });
 
   const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: limiteUploadMb * 1024 * 1024, files: 1 } });
   const umArquivo = (campo) => (req, res, next) =>
@@ -65,6 +67,11 @@ function criarApp({ repo, filial = 1005, usuarioDev = '', limiteUploadMb = 20, a
   api.delete('/aparelhos/:id', rota((req) => controle.excluirAparelho(req.usuario, req.params.id, req.query.motivo)));
   api.post('/aparelhos/:id/fotos', umArquivo('foto'), rota(async (req) => ({ foto: await controle.enviarFoto(req.usuario, req.params.id, req.file) })));
   api.delete('/fotos/:id', rota((req) => controle.excluirFoto(req.usuario, req.params.id)));
+
+  // Pedidos para a TI (devolver, reposição, perda, troca)
+  api.get('/pedidos', rota(async (req) => ({ pedidos: await pedidos.listar(req.usuario, { somenteAbertos: req.query.abertos === 'sim' }) })));
+  api.post('/pedidos', rota(async (req) => ({ pedido: await pedidos.criar(req.usuario, corpo(req)) })));
+  api.put('/pedidos/:id', rota(async (req) => ({ pedido: await pedidos.atualizar(req.usuario, req.params.id, corpo(req)) })));
 
   // Pessoas, supervisores e gestores
   api.get('/pessoas/:cracha', rota(async (req) => ({ pessoa: await equipe.buscarPessoa(req.usuario, req.params.cracha) })));

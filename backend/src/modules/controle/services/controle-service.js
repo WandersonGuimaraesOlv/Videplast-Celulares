@@ -9,6 +9,7 @@ const { erro } = require('../../shared/erros');
 const { texto, limparCampos, diferencas, centroCustoValido } = require('../../shared/campos');
 const { normalizarTelefone } = require('../../telefonia/services/controle-chips-service');
 const { formatarTelefone } = require('../../telefonia/services/rateio-telefonia-service');
+const { abertosPorItem, TIPOS_PEDIDO, STATUS_PEDIDO } = require('../../pedidos/services/pedidos-service');
 
 const CAMPOS_POSSE = ['responsavel', 'responsavel_cracha', 'setor'];
 const CAMPOS_CHIP = {
@@ -147,8 +148,31 @@ function criarControle({ repo, obterCadastro, filial, agora = () => new Date().t
     }
     linhas.sort((x, y) => x.centro_custo.localeCompare(y.centro_custo) || x.responsavel.localeCompare(y.responsavel, 'pt-BR') || x.chave.localeCompare(y.chave));
 
+    // Pedidos à TI ainda abertos de cada item (se a tabela de pedidos falhar, a lista sai mesmo assim)
+    let abertos = new Map();
+    try {
+      abertos = abertosPorItem(await repo.listarPedidos({ ccs, somenteAbertos: true }));
+    } catch (e) {
+      console.error('[Pedidos] Não consegui ler os pedidos abertos:', e.message);
+    }
+    for (const l of linhas) {
+      const lista = [...(abertos.get(`chip-${l.numero}`) || []), ...((l.aparelho && abertos.get(`aparelho-${l.aparelho.id}`)) || [])];
+      l.pedidos = [...new Map(lista.map((p) => [p.id, p])).values()];
+    }
+
     const centrosCusto = u.gestor ? cadastro.lista : u.ccs.map((codigo) => ({ codigo, nome: nomeCc(codigo) }));
     return { linhas, centrosCusto };
+  }
+
+  /** Pedidos à TI do item (todos, mais recentes primeiro); falha na tabela não derruba a ficha. */
+  async function pedidosDoItem(c, a) {
+    try {
+      const lista = await repo.pedidosDoItem({ numero: c ? c.numero : '', aparelhoId: a ? a.id : null });
+      return lista.map((p) => ({ ...p, tipoRotulo: TIPOS_PEDIDO[p.tipo] || p.tipo, statusRotulo: STATUS_PEDIDO[p.status] || p.status }));
+    } catch (e) {
+      console.error('[Pedidos] Não consegui ler os pedidos do item:', e.message);
+      return [];
+    }
   }
 
   /** Ficha de um chip (com o celular dele) ou de um celular sem chip, com fotos e histórico. */
@@ -168,13 +192,14 @@ function criarControle({ repo, obterCadastro, filial, agora = () => new Date().t
     exigirCc(u, cc);
     const cadastro = await obterCadastro();
     const itens = [c && { tipo: 'chip', chave: c.numero }, a && { tipo: 'aparelho', chave: String(a.id) }].filter(Boolean);
-    const [fotos, hist] = await Promise.all([a ? fotosComEndereco(a.id) : [], repo.listarHistorico(itens)]);
+    const [fotos, hist, pedidos] = await Promise.all([a ? fotosComEndereco(a.id) : [], repo.listarHistorico(itens), pedidosDoItem(c, a)]);
     return {
       chip: c ? { ...c, numeroFormatado: formatarTelefone(c.numero) } : null,
       aparelho: a,
       nome_cc: cc && cadastro.buscar(cc) ? cadastro.buscar(cc).nome : '',
       fotos,
       historico: hist,
+      pedidos,
       permissoes: { gestor: u.gestor, trocarCc: u.gestor, excluir: u.gestor },
     };
   }

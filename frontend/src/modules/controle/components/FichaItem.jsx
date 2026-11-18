@@ -6,6 +6,7 @@ import FormAparelho from './FormAparelho.jsx'
 import FormNovoAparelho from './FormNovoAparelho.jsx'
 import Fotos from './Fotos.jsx'
 import Historico from './Historico.jsx'
+import PedidosDoItem from '../../pedidos/components/PedidosDoItem.jsx'
 import { abrirFicha, desvincular, excluirAparelho, excluirChip, vincular } from '../services/controle-api.js'
 
 /**
@@ -96,6 +97,17 @@ export default function FichaItem({ alvo, usuario, centrosCusto, celularesSemChi
       {!ficha && !erro && <p className="vazio">Carregando...</p>}
       {ficha && (
         <>
+          <section className="secao secao-pedidos">
+            <h3>Pedidos para a TI</h3>
+            <PedidosDoItem
+              alvo={ficha.chip ? { chip: ficha.chip.numero } : { aparelho: ficha.aparelho.id }}
+              pedidos={ficha.pedidos || []}
+              temChip={Boolean(ficha.chip)}
+              temCelular={Boolean(ficha.aparelho)}
+              onResultado={(r) => depois(r, 'Pedido enviado para a TI.')}
+            />
+          </section>
+
           {ficha.chip && (
             <section className="secao">
               <h3>Chip e quem usa</h3>

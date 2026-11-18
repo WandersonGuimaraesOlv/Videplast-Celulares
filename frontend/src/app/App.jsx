@@ -3,14 +3,17 @@ import MensagemStatus from '../shared/components/MensagemStatus.jsx'
 import ListaControle from '../modules/controle/components/ListaControle.jsx'
 import Equipe from '../modules/equipe/Equipe.jsx'
 import ImportarExportar from '../modules/planilhas/ImportarExportar.jsx'
+import Pedidos from '../modules/pedidos/Pedidos.jsx'
 import { AbaRateio } from '../modules/telefonia/index.js'
 import { chamarApi } from '../shared/lib/api.js'
 
-const ABAS_GESTOR = [
+// Supervisor vê só as duas primeiras; a TI vê todas
+const ABAS = [
   { id: 'controle', rotulo: 'Controle de Chips' },
-  { id: 'rateio', rotulo: 'Rateio TIM' },
-  { id: 'equipe', rotulo: 'Supervisores' },
-  { id: 'planilhas', rotulo: 'Importar / Exportar' },
+  { id: 'pedidos', rotulo: 'Pedidos para a TI' },
+  { id: 'rateio', rotulo: 'Rateio TIM', gestor: true },
+  { id: 'equipe', rotulo: 'Supervisores', gestor: true },
+  { id: 'planilhas', rotulo: 'Importar / Exportar', gestor: true },
 ]
 
 export default function App() {
@@ -19,6 +22,9 @@ export default function App() {
   const [aba, setAba] = useState('controle')
   // Abas já abertas continuam montadas: trocar de aba não perde o que estava na tela
   const [visitadas, setVisitadas] = useState(() => new Set(['controle']))
+  // Sobe a cada mudança feita numa aba, para as outras recarregarem (ex.: pedido respondido)
+  const [versao, setVersao] = useState(0)
+  const mudou = () => setVersao((v) => v + 1)
 
   useEffect(() => {
     chamarApi('/eu').then((r) => (r.sucesso ? setUsuario(r.usuario) : setErro(r.erro)))
@@ -36,6 +42,7 @@ export default function App() {
       : usuario.ccs.length
         ? `Supervisor de ${usuario.ccs.length === 1 ? usuario.ccs[0] : `${usuario.ccs.length} centros de custo`}`
         : 'Sem centro de custo'
+  const abas = ABAS.filter((a) => !a.gestor || (usuario && usuario.gestor))
 
   return (
     <div className="pagina">
@@ -67,25 +74,26 @@ export default function App() {
 
       {usuario && (usuario.gestor || usuario.ccs.length > 0) && (
         <>
-          {usuario.gestor && (
-            <nav className="abas" role="tablist">
-              {ABAS_GESTOR.map((a) => (
-                <button
-                  key={a.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={aba === a.id}
-                  className={`aba${aba === a.id ? ' aba-ativa' : ''}`}
-                  onClick={() => abrir(a.id)}
-                >
-                  {a.rotulo}
-                </button>
-              ))}
-            </nav>
-          )}
+          <nav className="abas" role="tablist">
+            {abas.map((a) => (
+              <button
+                key={a.id}
+                type="button"
+                role="tab"
+                aria-selected={aba === a.id}
+                className={`aba${aba === a.id ? ' aba-ativa' : ''}`}
+                onClick={() => abrir(a.id)}
+              >
+                {a.rotulo}
+              </button>
+            ))}
+          </nav>
           <main className="conteudo">
             <div className="painel-aba" hidden={aba !== 'controle'}>
-              <ListaControle usuario={usuario} />
+              <ListaControle usuario={usuario} versao={versao} onMudou={mudou} />
+            </div>
+            <div className="painel-aba" hidden={aba !== 'pedidos'}>
+              {visitadas.has('pedidos') && <Pedidos usuario={usuario} versao={versao} onMudou={mudou} />}
             </div>
             {usuario.gestor && (
               <>
