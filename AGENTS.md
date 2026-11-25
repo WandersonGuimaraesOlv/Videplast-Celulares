@@ -12,6 +12,7 @@
 - Celular ligado a chip: quem usa, setor e CC vêm do chip (`controle-service.js` sincroniza).
 - CC sempre conferido no cadastro `centro_de_custo` da filial (`FILIAL`, 1005); `1007...` vira `1005...`.
 - O rateio usa `calcularRateio` do módulo telefonia sem mudar a regra: CC da linha = CC do chip; valor fora das linhas proporcional ou inteiro no CC informado.
+- Duas abas, Chips e Celulares (25/11/2026): nem todo chip está num celular e nem todo celular tem chip. As duas usam as mesmas linhas de `/api/controle` (`useControle`), separadas no frontend (`controle/lib/itens.js`); fichas separadas (`FichaChip`, `FichaCelular`) com o vínculo em destaque. Visual no vermelho do Portal; no celular as tabelas viram cartões.
 - Pedidos para a TI (17/11/2026): supervisor pede devolver, reposição do chip, perda/roubo, troca de celular ou outro, nos itens dos CCs dele. Não repete pedido aberto do mesmo tipo no mesmo item. O pedido não muda o cadastro; só a TI responde (em andamento, concluído, recusado com motivo). `modules/pedidos`; a lista e a ficha seguem funcionando se a tabela `cel_pedidos` falhar.
 
 ## Estrutura
@@ -32,7 +33,7 @@ backend/src/
     └── shared/                  # erros, campos, texto, números, PDF
 frontend/src/
 ├── app/ (App.jsx, estilos.css, config.js)
-├── modules/controle|equipe|planilhas|telefonia
+├── modules/controle (lib/itens.js, hooks/, components/)|equipe|pedidos|planilhas|telefonia
 └── shared/ (api.js, textos.js, reduzir-foto.js, Modal, MensagemStatus)
 supabase/001_celulares.sql       # tabelas cel_*, RLS e bucket das fotos
 ```

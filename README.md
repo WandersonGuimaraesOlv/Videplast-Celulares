@@ -18,11 +18,19 @@ estado e as fotos de cada aparelho, o histórico de quem mudou o quê, e o ratei
 Quem está usando vem do **Portal de Acesso**: o Nginx do servidor só deixa entrar quem o Portal liberou e repassa o
 crachá no cabeçalho `X-Usuario`. O sistema precisa estar cadastrado no Portal (código `celulares`, caminho `/celulares/`).
 
-## Tipos de item
+## Chips e celulares: dois controles
 
-- **Celular + chip**: chip com um celular ligado. Quem usa, setor e CC são os do chip; o celular acompanha.
-- **Só chip**: chip sem celular cadastrado (ex.: chip no celular particular, modem, rastreador).
-- **Só celular**: celular sem chip (reserva, Wi-Fi, manutenção) num CC ou no estoque da TI (sem CC).
+Nem todo chip está num celular da empresa e nem todo celular tem chip, por isso são duas abas:
+
+- **Chips**: cada linha da TIM, com quem usa, o CC que paga, o plano e o celular em que está (se estiver em um).
+  Números do topo (que também filtram): em um celular, sem celular, reserva ou cancelado, com pedido à TI.
+- **Celulares**: cada aparelho, com modelo, estado, fotos, quem usa e o chip que está nele (se tiver).
+  Números do topo: com chip, sem chip, ruim ou quebrado, sem foto. O supervisor cadastra aqui os celulares do CC dele.
+
+No computador as listas são tabelas compactas; no celular cada linha vira um cartão. Chip e celular têm **fichas
+separadas**, e cada ficha mostra em destaque com quem o item está ligado, com botões para abrir a outra ficha, ligar ou
+separar. Celular ligado a um chip segue quem usa, setor e CC do chip. Celular sem chip fica num CC ou no estoque da
+TI (sem CC). Chip sem celular: chip no celular particular, modem, rastreador ou guardado.
 
 ## Pedidos para a TI
 
