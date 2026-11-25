@@ -36,7 +36,7 @@ export default function Fotos({ aparelhoId, fotos, usuario, onResultado }) {
   return (
     <div className="fotos">
       <div className="acoes">
-        <label className={`botao${enviando ? ' botao-ocupado' : ''}`}>
+        <label className={`botao botao-primario${enviando ? ' botao-ocupado' : ''}`}>
           {enviando ? 'Enviando...' : 'Tirar foto'}
           <input type="file" accept="image/*" capture="environment" onChange={escolher} disabled={enviando} hidden />
         </label>

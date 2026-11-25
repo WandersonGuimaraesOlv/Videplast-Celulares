@@ -3,18 +3,20 @@ import MensagemStatus from '../../shared/components/MensagemStatus.jsx'
 import FichaItem from '../controle/components/FichaItem.jsx'
 import { STATUS_PEDIDO, TIPOS_PEDIDO, formatarData, rotulo } from '../../shared/lib/textos.js'
 import { listarPedidos, responderPedido } from './services/pedidos-api.js'
-import { listarControle } from '../controle/services/controle-api.js'
 
 const ABERTOS = ['aberto', 'em_andamento']
+
+/** Ficha que o pedido abre: a do celular quando o pedido é do celular, senão a do chip. */
+const alvoDoPedido = (p) =>
+  p.aparelho_id && (!p.numero_chip || p.tipo === 'troca_aparelho') ? { aparelho: p.aparelho_id } : { chip: p.numero_chip }
 
 /**
  * Aba "Pedidos": a TI vê todos e responde (em andamento, concluído, recusado);
  * o supervisor acompanha os pedidos dos CCs dele.
+ * controle: chips e celulares já carregados (useControle), para a ficha aberta daqui.
  */
-export default function Pedidos({ usuario, versao = 0, onMudou }) {
+export default function Pedidos({ usuario, controle, versao = 0, onMudou }) {
   const [pedidos, setPedidos] = useState([])
-  // Para a ficha aberta daqui: CCs que a pessoa pode escolher e celulares sem chip
-  const [controle, setControle] = useState({ centrosCusto: [], celularesSemChip: [] })
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState('')
   const [mensagem, setMensagem] = useState('')
@@ -22,18 +24,12 @@ export default function Pedidos({ usuario, versao = 0, onMudou }) {
   const [aberto, setAberto] = useState(null)
 
   const carregar = useCallback(async () => {
-    const [r, c] = await Promise.all([listarPedidos(false), listarControle()])
+    const r = await listarPedidos(false)
     if (r.sucesso) {
       setPedidos(r.pedidos)
       setErro('')
     } else {
       setErro(r.erro)
-    }
-    if (c.sucesso) {
-      setControle({
-        centrosCusto: c.centrosCusto,
-        celularesSemChip: c.linhas.filter((l) => l.tipo === 'so_celular').map((l) => ({ ...l.aparelho, centro_custo: l.centro_custo })),
-      })
     }
     setCarregando(false)
   }, [])
@@ -67,16 +63,18 @@ export default function Pedidos({ usuario, versao = 0, onMudou }) {
   return (
     <section className="cartao">
       <div className="cabecalho-cartao">
-        <h2>Pedidos para a TI {qtdAbertos > 0 && <span className="selo selo-pedido-aberto">{qtdAbertos} aberto(s)</span>}</h2>
-        <label className="sem-quebra">
+        <div>
+          <h2>Pedidos para a TI {qtdAbertos > 0 && <span className="selo selo-pedido-aberto">{qtdAbertos} aberto(s)</span>}</h2>
+          <p className="explicacao">
+            {usuario.gestor
+              ? 'Pedidos dos supervisores. O pedido não muda o cadastro sozinho: resolva na ficha (e na TIM) e depois marque como concluído, dizendo o que foi feito.'
+              : 'Pedidos dos seus centros de custo. Para fazer um pedido, abra o chip (aba Chips) ou o celular (aba Celulares) e clique em "Fazer pedido para a TI".'}
+          </p>
+        </div>
+        <label className="marcar">
           <input type="checkbox" checked={verFechados} onChange={(e) => setVerFechados(e.target.checked)} /> Mostrar os já resolvidos
         </label>
       </div>
-      <p className="explicacao">
-        {usuario.gestor
-          ? 'Pedidos dos supervisores. O pedido não muda o cadastro sozinho: resolva na ficha (e na TIM) e depois marque como concluído, dizendo o que foi feito.'
-          : 'Pedidos dos seus centros de custo. Para fazer um pedido, abra o chip ou o celular no Controle de Chips e clique em "Fazer pedido para a TI".'}
-      </p>
       <MensagemStatus tipo="erro">{erro}</MensagemStatus>
       <MensagemStatus tipo="sucesso">{mensagem}</MensagemStatus>
       {carregando && <p className="vazio">Carregando...</p>}
@@ -105,9 +103,11 @@ export default function Pedidos({ usuario, versao = 0, onMudou }) {
               </div>
             )}
             <div className="acoes">
-              <button type="button" className="botao botao-discreto" onClick={() => setAberto(p.numero_chip ? { chip: p.numero_chip } : { aparelho: p.aparelho_id })}>
-                Abrir ficha
-              </button>
+              {(p.numero_chip || p.aparelho_id) && (
+                <button type="button" className="botao botao-discreto" onClick={() => setAberto(alvoDoPedido(p))}>
+                  Abrir ficha
+                </button>
+              )}
               {usuario.gestor && ABERTOS.includes(p.status) && (
                 <>
                   {p.status === 'aberto' && (
@@ -133,6 +133,7 @@ export default function Pedidos({ usuario, versao = 0, onMudou }) {
           alvo={aberto}
           usuario={usuario}
           centrosCusto={controle.centrosCusto}
+          chipsSemCelular={controle.chipsSemCelular}
           celularesSemChip={controle.celularesSemChip}
           onFechar={() => setAberto(null)}
           onMudou={() => onMudou?.()}
